@@ -1,5 +1,10 @@
 package aetest
 
+// OrderStore is a `map[string]OrderSummary` that stores as key the order_id of
+// type UUID version 4 string and the value of OrderSummary. This is used to
+// lookup orders based on a supplied order_id.
+type OrderStore map[string]OrderSummary
+
 // ItemStore is a `map[string]int` that stores as a key the item name with a
 // value of the cost of the item.
 type ItemStore map[string]int
@@ -16,10 +21,10 @@ type ItemDiscount map[string]DiscountFunction
 
 // NewStore creates an `ItemStore` and populates the key and values of the
 // store with required item names and costs respectively.
-func NewStore() (ItemStore, ItemDiscount) {
-	store := make(ItemStore)
-	store["Apples"] = 60
-	store["Oranges"] = 25
+func NewStore() (ItemStore, ItemDiscount, OrderStore) {
+	item_store := make(ItemStore)
+	item_store["Apples"] = 60
+	item_store["Oranges"] = 25
 
 	// Apples are buy one get one free
 	var applesDiscount DiscountFunction = func(cost int, quantity int) int {
@@ -54,5 +59,8 @@ func NewStore() (ItemStore, ItemDiscount) {
 	discount["Apples"] = applesDiscount
 	discount["Oranges"] = orangesDiscount
 
-	return store, discount
+	// Create an empty OrderStore for storing future successful orders.
+	order_store := make(OrderStore)
+
+	return item_store, discount, order_store
 }

@@ -35,6 +35,37 @@ By using a command line JSON processing tool like [jq](https://stedolan.github.i
 curl -X POST -H "Content-Type: application/json" -d @examples/simple_order.json localhost:3000/submit-order | jq .
 ```
 
+## Getting a single order
+
+The response of making an order request is an object that contains a unique generated order id, a
+summary of the order and the total cost of the order. Each successfull processed order is stored
+internally and can be queried by making a POST request to the `/get-order` endpoint. The payload 
+required is JSON format of the following structure.
+
+```js
+// replace the order_id below with one that has been generated from your order.
+{"order_id":"36c9b2a4-a1eb-4c6a-9a55-7448898bc09c"}
+```
+
+If a supplied order id is invalid or not found the response will be an appropriate error. An
+example request is shown below.
+
+```sh
+# replace [PAYLOAD] with JSON structure described above
+curl -X POST -H "Content-Type: application/json" -d [PAYLOAD] localhost:3000/submit-order
+```
+
+## Getting all orders
+
+A list of all orders can be obtained by making a GET request to the `/get-all-orders` endpoint. If
+no orders have been previously made, this will return an empty list. An example request is shown
+below:
+
+```sh
+# replace [PAYLOAD] with JSON structure described above
+curl localhost:3000/get-all-orders
+```
+
 ## Testing
 There has been a series of test cases that have been produced. This can be found in the 
 [`service_test`](service_test.go) file. You can run the tests with the below command:

@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/johncgriffin/overflow"
+	uuid "github.com/satori/go.uuid"
 )
 
 var (
@@ -17,6 +18,10 @@ var (
 	// ErrIntegerOverflow is returned when the user enters an integer value
 	// that the hardware cannot process without overlow.
 	ErrIntegerOverflow = errors.New("unable to process order request, item total too large")
+
+	// ErrIntegerOverflow is returned when the user enters an integer value
+	// that the hardware cannot process without overlow.
+	ErrOrderNotFound = errors.New("order not found")
 )
 
 // Service is an interface that encapsulates all the functionalities of the
@@ -26,6 +31,15 @@ type Service interface {
 	// the order is invalid this returns an empty OrderSummary and a relevant
 	// error message to the caller.
 	SimpleSummary(req OrderRequest) (OrderSummary, error)
+
+	// GetSingleOrder returns an OrderSummary using the order_id from a user
+	// supplied GetSingleOrderRequest. If the order_id is invalid this returns
+	// an empty OrderSummary and a relevant error message to the caller.
+	GetSingleOrder(req GetSingleOrderRequest) (OrderSummary, error)
+
+	// GetAllOrders returns all orders that have been processed. If no orders
+	// exists this return an empty AllOrders to the caller.
+	GetAllOrders() AllOrders
 }
 
 // orderService is a private struct that is used to satisfy the interface
@@ -33,8 +47,9 @@ type Service interface {
 // the Service' methods. This struct holds an ItemStore that is used to provide
 // a lookup of the cost of the users items.
 type orderService struct {
-	store    ItemStore
-	discount ItemDiscount
+	item_store  ItemStore
+	discount    ItemDiscount
+	order_store OrderStore
 }
 
 // InjectCost adds the cost the user supplied Cart. This makes use of the
@@ -45,7 +60,7 @@ func (svc orderService) InjectCost(cart []Item) ([]ItemWithCost, bool) {
 	injectedItems := []ItemWithCost{}
 
 	for _, item := range cart {
-		cost, ok := svc.store[item.ItemName]
+		cost, ok := svc.item_store[item.ItemName]
 		if !ok {
 			// item does not exist
 			return []ItemWithCost{}, false
@@ -58,8 +73,12 @@ func (svc orderService) InjectCost(cart []Item) ([]ItemWithCost, bool) {
 }
 
 // New returns a new Service to the caller.
-func New(store ItemStore, discount ItemDiscount) Service {
-	return orderService{store, discount}
+func New(
+	item_store ItemStore,
+	discount ItemDiscount,
+	order_store OrderStore,
+) Service {
+	return orderService{item_store, discount, order_store}
 }
 
 func (svc orderService) SimpleSummary(
@@ -108,5 +127,44 @@ func (svc orderService) SimpleSummary(
 		running_total = result
 	}
 
-	return OrderSummary{cart_with_costs, running_total}, nil
+	// Generate a unique order_id and use this to create an OrderSummary. Store
+	// the completed order in the internal OrderStore.
+	order_id := uuid.NewV4().String()
+	complete_order := OrderSummary{order_id, cart_with_costs, running_total}
+	svc.order_store[order_id] = complete_order
+
+	return complete_order, nil
+}
+
+func (svc orderService) GetSingleOrder(
+	req GetSingleOrderRequest,
+) (OrderSummary, error) {
+	// Validate the input.
+	if err := req.Validate(); err != nil {
+		return OrderSummary{}, ErrInvalidRequest
+	}
+
+	// Check if order_id exists in order store.
+	order, ok := svc.order_store[req.OrderID]
+	if !ok {
+		return OrderSummary{}, ErrOrderNotFound
+	}
+
+	return order, nil
+}
+
+func (svc orderService) GetAllOrders() AllOrders {
+	var all_orders []OrderSummary
+
+	// Iterate through the internal OrderStore and append all orders to a slice
+	// of order summaries.
+	for _, order := range svc.order_store {
+		all_orders = append(all_orders, order)
+	}
+
+	if len(all_orders) == 0 {
+		return AllOrders{}
+	}
+
+	return AllOrders{all_orders}
 }

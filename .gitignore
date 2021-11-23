@@ -1,0 +1,29 @@
+# Secrets & configs
+*.env
+*.conf
+
+# Binaries for build & plugins
+*.exe
+*.dll
+*.so
+*.dylib
+*.o
+*.a
+*.pb.go
+
+# Test binary, built with 'go test -c'
+*.prof
+*.tmp
+*.test
+
+# Logs
+*.log
+*.txt
+
+
+# Output of the go coverage tool
+*.out
+
+# Folders
+config/
+
