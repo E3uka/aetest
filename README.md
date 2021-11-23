@@ -12,7 +12,7 @@ to run on by using flags.
 
 ```sh
 # run server on port 8080
-go run affordability/cmd/main.go -http=:8080
+go run cmd/main.go -http=:8080
 ```
 
 ## Simple order request
@@ -52,7 +52,7 @@ example request is shown below.
 
 ```sh
 # replace [PAYLOAD] with JSON structure described above
-curl -X POST -H "Content-Type: application/json" -d [PAYLOAD] localhost:3000/submit-order
+curl -X POST -H "Content-Type: application/json" -d [PAYLOAD] localhost:3000/get-order
 ```
 
 ## Getting all orders
@@ -62,7 +62,6 @@ no orders have been previously made, this will return an empty list. An example 
 below:
 
 ```sh
-# replace [PAYLOAD] with JSON structure described above
 curl localhost:3000/get-all-orders
 ```
 
