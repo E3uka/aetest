@@ -21,10 +21,10 @@ func run() error {
 	ctx := context.Background()
 	errChan := make(chan error)
 
-	store := aetest.NewStore()
+	store, discount := aetest.NewStore()
 
 	// Create a new service that will handle the order API's requests.
-	service := aetest.New(store)
+	service := aetest.New(store, discount)
 	router := aetest.NewOrdersRouter(service)
 
 	// Ignoring logging, TLS and timeouts for simplicity.

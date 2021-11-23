@@ -33,7 +33,8 @@ type Service interface {
 // the Service' methods. This struct holds an ItemStore that is used to provide
 // a lookup of the cost of the users items.
 type orderService struct {
-	store ItemStore
+	store    ItemStore
+	discount ItemDiscount
 }
 
 // InjectCost adds the cost the user supplied Cart. This makes use of the
@@ -57,8 +58,8 @@ func (svc orderService) InjectCost(cart []Item) ([]ItemWithCost, bool) {
 }
 
 // New returns a new Service to the caller.
-func New(store ItemStore) Service {
-	return orderService{store}
+func New(store ItemStore, discount ItemDiscount) Service {
+	return orderService{store, discount}
 }
 
 func (svc orderService) SimpleSummary(
@@ -90,6 +91,18 @@ func (svc orderService) SimpleSummary(
 		result, ok := overflow.Add(intermediate_result, running_total)
 		if !ok {
 			return OrderSummary{}, ErrIntegerOverflow
+		}
+
+		// Using the ItemDiscount lookup whether a discount exists for that
+		// item. If a discount is not found by the above logic this does not
+		// mean that the item does not exist in the store, it is fine to skip
+		// the discount step. If the discount exists apply the discount to the
+		// result.
+		calculate_discount, ok := svc.discount[item.ItemName]
+		if ok {
+			// discount found, apply the discount
+			discount := calculate_discount(item.Cost, item.Quantity)
+			result -= discount
 		}
 
 		running_total = result

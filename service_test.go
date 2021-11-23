@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	store            = NewStore()
+	store, discount  = NewStore()
 	service          Service
 	router           http.Handler
 	goodOrderRequest OrderRequest
@@ -22,7 +22,7 @@ var (
 
 // Scaffold required globals items for use in the test cases.
 func TestMain(m *testing.M) {
-	service = New(store)
+	service = New(store, discount)
 	router = NewOrdersRouter(service)
 
 	// Set up a base struct of a good order request to use and manipulate in the
@@ -62,7 +62,9 @@ func TestWellFormedRequestHTTP(t *testing.T) {
 	require.Nil(t, err, "error deserializing response")
 
 	// Check that the total for this order equals (2 x Apples) + (3 Oranges)
-	require.Equal(t, 195, success.TotalCost, "incorrect order total")
+	// subtracting the discount applied for these items i.e buy one get on free
+	// for apples and 3 for the price of two on oranges.
+	require.Equal(t, 110, success.TotalCost, "incorrect order total")
 }
 
 func TestMalformedRequestHTTP(t *testing.T) {
